@@ -1,0 +1,14 @@
+.env
+nginx/certs/
+nginx/certbot/
+__pycache__/
+*.pyc
+.next/
+node_modules/
+*.egg-info/
+.venv/
+.DS_Store
+.env.prod
+PROJECT.md
+deployment-plan.md
+contextiq_tehcnical_architecture_doc.md

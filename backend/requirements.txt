@@ -1,0 +1,45 @@
+# ─── Web framework ─────────────────────────────────────────────────────────────
+fastapi[standard]>=0.115.0
+uvicorn[standard]>=0.34.0
+pydantic[email]>=2.10.0
+pydantic-settings>=2.7.0
+
+# ─── Database ──────────────────────────────────────────────────────────────────
+sqlalchemy[asyncio]>=2.0.36
+asyncpg>=0.30.0
+alembic>=1.14.0
+
+# ─── Vector DB ─────────────────────────────────────────────────────────────────
+qdrant-client>=1.12.0
+
+# ─── Object storage ───────────────────────────────────────────────────────────
+boto3>=1.35.0
+
+# ─── Embeddings (local) ───────────────────────────────────────────────────────
+sentence-transformers>=3.0.0
+
+# ─── LLM (via OpenRouter) ─────────────────────────────────────────────────────
+httpx>=0.28.0
+
+# ─── Ingestion ─────────────────────────────────────────────────────────────────
+pymupdf>=1.25.0
+pdfplumber>=0.11.0
+gitpython>=3.1.43
+beautifulsoup4>=4.12.3
+tiktoken>=0.8.0
+tree-sitter>=0.23.0
+tree-sitter-language-pack>=0.13.0
+youtube-transcript-api>=0.6.0
+python-docx>=1.1.0
+
+# ─── Auth ──────────────────────────────────────────────────────────────────────
+python-jose[cryptography]>=3.3.0
+bcrypt>=4.2.0
+
+# ─── Background tasks ────────────────────────────────────────────────────────
+celery[redis]>=5.4.0
+
+# ─── Streaming / Misc ─────────────────────────────────────────────────────────
+sse-starlette>=2.2.0
+python-multipart>=0.0.18
+python-dotenv>=1.0.1
