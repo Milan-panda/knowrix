@@ -121,7 +121,7 @@ async def _persist_and_stream(
     yield {"event": "done", "data": json.dumps({"thread_id": str(thread_id)})}
 
 
-@router.post("/")
+@router.post("")
 async def chat(
     body: ChatRequest,
     current_user: User = Depends(get_current_user),

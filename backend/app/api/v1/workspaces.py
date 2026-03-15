@@ -35,7 +35,7 @@ from app.models.schemas import (
 router = APIRouter()
 
 
-@router.post("/", response_model=WorkspaceResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=WorkspaceResponse, status_code=status.HTTP_201_CREATED)
 async def create_workspace(
     body: WorkspaceCreate,
     current_user: User = Depends(get_current_user),
@@ -56,7 +56,7 @@ async def create_workspace(
     return workspace
 
 
-@router.get("/", response_model=list[WorkspaceWithRoleResponse])
+@router.get("", response_model=list[WorkspaceWithRoleResponse])
 async def list_workspaces(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

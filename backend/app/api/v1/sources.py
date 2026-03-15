@@ -216,7 +216,7 @@ async def add_youtube_source(
     return source
 
 
-@router.get("/", response_model=list[SourceResponse])
+@router.get("", response_model=list[SourceResponse])
 async def list_sources(
     workspace_id: UUID,
     current_user: User = Depends(get_current_user),
