@@ -122,7 +122,7 @@ export default function ChatPage() {
       const sourceFilter = Array.from(selectedSourceIds);
 
       try {
-        const stream = streamSSE("/api/v1/chat/", {
+        const stream = streamSSE("/api/v1/chat", {
           workspace_id: currentWorkspace.id,
           thread_id: activeThreadId,
           message: text,
