@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     EMBEDDING_DIM: int = 384
     RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_CHAT_ID: str = ""
+
+    # Optional: https://ipinfo.io — better IP geolocation than free ip-api alone.
+    IPINFO_TOKEN: str = ""
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",")]

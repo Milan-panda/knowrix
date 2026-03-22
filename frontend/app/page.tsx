@@ -1,3 +1,4 @@
+import { LandingVisitBeacon } from "./(marketing)/_components/landing-visit-beacon";
 import { Navbar } from "./(marketing)/_components/navbar";
 import { Hero } from "./(marketing)/_components/hero";
 import { LogosBar } from "./(marketing)/_components/logos-bar";
@@ -11,6 +12,7 @@ import { FadeInSection } from "./(marketing)/_components/fade-in-section";
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
+      <LandingVisitBeacon />
       <Navbar />
       <main>
         <Hero />
