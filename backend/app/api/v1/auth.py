@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import create_access_token, get_current_user, hash_password, verify_password
+from app.core.client_ip import get_client_ip
 from app.core.database import get_db
 from app.models.db import User, WorkspaceInvite, WorkspaceMember
 from app.models.schemas import SignupRequest, SigninRequest, AuthResponse, UserResponse
+from app.services.telegram_notify import notify_activity
 
 router = APIRouter()
 
@@ -13,6 +15,8 @@ router = APIRouter()
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def signup(
     body: SignupRequest,
+    background_tasks: BackgroundTasks,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(User).where(User.email == body.email))
@@ -49,6 +53,13 @@ async def signup(
         await db.delete(invite)
 
     token = create_access_token(data={"sub": str(user.id)})
+    client_ip = get_client_ip(request)
+    background_tasks.add_task(
+        notify_activity,
+        "Sign up",
+        [f"email: {user.email}", f"user_id: {user.id}"],
+        client_ip=client_ip,
+    )
     return AuthResponse(
         access_token=token,
         user=UserResponse.model_validate(user),
@@ -58,6 +69,8 @@ async def signup(
 @router.post("/signin", response_model=AuthResponse)
 async def signin(
     body: SigninRequest,
+    background_tasks: BackgroundTasks,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(User).where(User.email == body.email))
@@ -76,6 +89,13 @@ async def signin(
         )
 
     token = create_access_token(data={"sub": str(user.id)})
+    client_ip = get_client_ip(request)
+    background_tasks.add_task(
+        notify_activity,
+        "Sign in",
+        [f"email: {user.email}", f"user_id: {user.id}"],
+        client_ip=client_ip,
+    )
     return AuthResponse(
         access_token=token,
         user=UserResponse.model_validate(user),

@@ -41,11 +41,16 @@ export function Navbar() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {isLanding ? (
-            <Button asChild size="sm" className="rounded-lg">
-              <Link href="/signup">Get Started</Link>
-            </Button>
+            <>
+              <Button asChild size="sm" variant="ghost" className="rounded-lg">
+                <Link href="/signin">Login</Link>
+              </Button>
+              <Button asChild size="sm" className="rounded-lg">
+                <Link href="/signup">Get Started</Link>
+              </Button>
+            </>
           ) : (
             <Button asChild size="sm" variant="outline" className="rounded-lg">
               <Link href="/signin">Sign In</Link>

@@ -1,11 +1,12 @@
 import io
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, UploadFile, File, status
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
+from app.core.client_ip import get_client_ip
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.minio_client import get_s3
@@ -13,9 +14,31 @@ from app.core.workspace_auth import require_workspace_role, get_workspace_member
 from app.models.db import User, Source, IngestionJob, WorkspaceMember
 from app.models.schemas import SourceCreate, SourceResponse
 from app.tasks.ingestion import run_ingestion_task
+from app.services.telegram_notify import notify_activity
 
 router = APIRouter()
 settings = get_settings()
+
+
+def _schedule_source_created_notify(
+    background_tasks: BackgroundTasks,
+    user: User,
+    workspace_id: UUID,
+    source: Source,
+    client_ip: str,
+):
+    background_tasks.add_task(
+        notify_activity,
+        "New source",
+        [
+            f"email: {user.email}",
+            f"workspace_id: {workspace_id}",
+            f"source_id: {source.id}",
+            f"type: {source.type}",
+            f"name: {source.name}",
+        ],
+        client_ip=client_ip,
+    )
 
 
 async def _verify_membership(workspace_id: UUID, current_user: User, db: AsyncSession):
@@ -32,6 +55,8 @@ def _file_extension(filename: str) -> str:
 @router.post("/upload", response_model=SourceResponse, status_code=status.HTTP_201_CREATED)
 async def upload_file(
     workspace_id: UUID,
+    background_tasks: BackgroundTasks,
+    request: Request,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -70,6 +95,10 @@ async def upload_file(
     db.add(job)
     await db.commit()
 
+    _schedule_source_created_notify(
+        background_tasks, current_user, workspace_id, source, get_client_ip(request)
+    )
+
     run_ingestion_task.delay(str(job.id), str(source.id))
 
     return source
@@ -78,6 +107,8 @@ async def upload_file(
 @router.post("/github", response_model=SourceResponse, status_code=status.HTTP_201_CREATED)
 async def add_github_source(
     body: SourceCreate,
+    background_tasks: BackgroundTasks,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -97,6 +128,10 @@ async def add_github_source(
     db.add(job)
     await db.commit()
 
+    _schedule_source_created_notify(
+        background_tasks, current_user, body.workspace_id, source, get_client_ip(request)
+    )
+
     run_ingestion_task.delay(str(job.id), str(source.id))
 
     return source
@@ -105,6 +140,8 @@ async def add_github_source(
 @router.post("/web", response_model=SourceResponse, status_code=status.HTTP_201_CREATED)
 async def add_web_source(
     body: SourceCreate,
+    background_tasks: BackgroundTasks,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -130,6 +167,10 @@ async def add_web_source(
     db.add(job)
     await db.commit()
 
+    _schedule_source_created_notify(
+        background_tasks, current_user, body.workspace_id, source, get_client_ip(request)
+    )
+
     run_ingestion_task.delay(str(job.id), str(source.id), max_depth=max_depth)
 
     return source
@@ -138,6 +179,8 @@ async def add_web_source(
 @router.post("/notion", response_model=SourceResponse, status_code=status.HTTP_201_CREATED)
 async def add_notion_source(
     body: SourceCreate,
+    background_tasks: BackgroundTasks,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -158,6 +201,9 @@ async def add_notion_source(
     job = IngestionJob(source_id=source.id)
     db.add(job)
     await db.commit()
+    _schedule_source_created_notify(
+        background_tasks, current_user, body.workspace_id, source, get_client_ip(request)
+    )
     run_ingestion_task.delay(str(job.id), str(source.id))
     return source
 
@@ -165,6 +211,8 @@ async def add_notion_source(
 @router.post("/github_discussions", response_model=SourceResponse, status_code=status.HTTP_201_CREATED)
 async def add_github_discussions_source(
     body: SourceCreate,
+    background_tasks: BackgroundTasks,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -185,6 +233,9 @@ async def add_github_discussions_source(
     job = IngestionJob(source_id=source.id)
     db.add(job)
     await db.commit()
+    _schedule_source_created_notify(
+        background_tasks, current_user, body.workspace_id, source, get_client_ip(request)
+    )
     run_ingestion_task.delay(str(job.id), str(source.id))
     return source
 
@@ -192,6 +243,8 @@ async def add_github_discussions_source(
 @router.post("/youtube", response_model=SourceResponse, status_code=status.HTTP_201_CREATED)
 async def add_youtube_source(
     body: SourceCreate,
+    background_tasks: BackgroundTasks,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -212,6 +265,9 @@ async def add_youtube_source(
     job = IngestionJob(source_id=source.id)
     db.add(job)
     await db.commit()
+    _schedule_source_created_notify(
+        background_tasks, current_user, body.workspace_id, source, get_client_ip(request)
+    )
     run_ingestion_task.delay(str(job.id), str(source.id))
     return source
 
