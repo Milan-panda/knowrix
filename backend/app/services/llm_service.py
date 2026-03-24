@@ -101,31 +101,53 @@ def build_messages(
 
 async def stream_chat_completion(
     messages: list[dict],
+    reasoning: bool = False,
 ) -> AsyncGenerator[str, None]:
     """
-    Stream tokens from OpenRouter. Yields text chunks as they arrive.
+    Stream tokens from the selected provider. Yields text chunks as they arrive.
+    Fast mode uses OpenRouter; reasoning mode uses NVIDIA.
     """
     settings = get_settings()
+    use_nvidia = reasoning
 
-    headers = {
-        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": settings.FRONTEND_URL,
-        "X-Title": "ContextIQ",
-    }
-
-    payload = {
-        "model": settings.LLM_MODEL,
-        "messages": messages,
-        "stream": True,
-        "max_tokens": 4096,
-        "temperature": 0.3,
-    }
+    if use_nvidia:
+        if not settings.NVIDIA_API_KEY:
+            raise ValueError("Reasoning mode requires NVIDIA_API_KEY to be configured.")
+        url = f"{settings.NVIDIA_BASE_URL}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {settings.NVIDIA_API_KEY}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": settings.NVIDIA_MODEL,
+            "messages": messages,
+            "stream": True,
+            "max_tokens": 4096,
+            "temperature": 0.6,
+            "top_p": 0.9,
+        }
+    else:
+        if not settings.OPENROUTER_API_KEY:
+            raise ValueError("Fast mode requires OPENROUTER_API_KEY to be configured.")
+        url = f"{settings.OPENROUTER_BASE_URL}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": settings.FRONTEND_URL,
+            "X-Title": "ContextIQ",
+        }
+        payload = {
+            "model": settings.LLM_MODEL,
+            "messages": messages,
+            "stream": True,
+            "max_tokens": 4096,
+            "temperature": 0.3,
+        }
 
     async with httpx.AsyncClient(timeout=120.0) as client:
         async with client.stream(
             "POST",
-            f"{settings.OPENROUTER_BASE_URL}/chat/completions",
+            url,
             headers=headers,
             json=payload,
         ) as response:

@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Database,
   Plug,
+  FolderTree,
   Users,
   LogOut,
   Plus,
@@ -157,6 +158,12 @@ export function AppSidebar() {
             icon: Plug,
             match: wsId ? pathname.startsWith(`/workspace/${wsId}/connectors`) : false,
           },
+          {
+            title: "Context Groups",
+            url: `/workspace/${wsId}/context-groups`,
+            icon: FolderTree,
+            match: wsId ? pathname.startsWith(`/workspace/${wsId}/context-groups`) : false,
+          },
         ]
       : []),
     {
@@ -209,7 +216,7 @@ export function AppSidebar() {
                       </SidebarMenuAction>
 
                       <CollapsibleContent>
-                        <SidebarMenuSub>
+                        <SidebarMenuSub className="max-h-56 overflow-y-auto pr-1">
                           {threads.map((thread) => (
                             <SidebarMenuSubItem key={thread.id} className="group/thread">
                               <SidebarMenuSubButton asChild className="pr-7">
@@ -264,7 +271,7 @@ export function AppSidebar() {
               </SidebarGroupAction>
             )}
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="max-h-56 overflow-y-auto pr-1">
                 {sources.map((source) => (
                   <SidebarMenuItem key={source.id}>
                     <SidebarMenuButton
