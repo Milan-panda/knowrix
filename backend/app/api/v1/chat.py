@@ -91,7 +91,7 @@ async def _persist_and_stream(
     full_response = ""
 
     try:
-        async for token in stream_chat_completion(messages):
+        async for token in stream_chat_completion(messages, reasoning=request.reasoning):
             full_response += token
             yield {"event": "token", "data": json.dumps({"text": token})}
     except Exception as e:
@@ -128,7 +128,9 @@ async def chat(
     db: AsyncSession = Depends(get_db),
 ):
     await get_workspace_member(body.workspace_id, current_user, db)
-    source_id_strs = [str(sid) for sid in body.source_ids] if body.source_ids else None
+    source_id_strs = None
+    if body.source_ids is not None:
+        source_id_strs = [str(sid) for sid in body.source_ids]
 
     # Resolve or create thread
     thread_id = body.thread_id
@@ -148,6 +150,9 @@ async def chat(
         await db.flush()
         thread_id = thread.id
 
+    if body.source_ids is not None:
+        thread.selected_source_ids = source_id_strs
+
     # Persist user message
     user_msg = ChatMessage(thread_id=thread_id, role="user", content=body.message)
     db.add(user_msg)
@@ -166,12 +171,16 @@ async def chat(
     ][-20:]
 
     # Retrieve context (more chunks improve overview answers for broad questions)
-    chunks = await hybrid_search(
-        workspace_id=str(body.workspace_id),
-        query=body.message,
-        top_k=18,
-        source_ids=source_id_strs,
-    )
+    if source_id_strs == []:
+        # Explicit empty selection means "no context", not "all context".
+        chunks = []
+    else:
+        chunks = await hybrid_search(
+            workspace_id=str(body.workspace_id),
+            query=body.message,
+            top_k=18,
+            source_ids=source_id_strs,
+        )
 
     return EventSourceResponse(
         _persist_and_stream(thread_id, chunks, body, history),

@@ -15,6 +15,7 @@ from app.models.db import User, Source, IngestionJob, WorkspaceMember
 from app.models.schemas import SourceCreate, SourceResponse
 from app.tasks.ingestion import run_ingestion_task
 from app.services.telegram_notify import notify_activity
+from app.services.context_groups import sync_system_context_groups
 
 router = APIRouter()
 settings = get_settings()
@@ -94,6 +95,7 @@ async def upload_file(
     job = IngestionJob(source_id=source.id)
     db.add(job)
     await db.commit()
+    await sync_system_context_groups(workspace_id, db)
 
     _schedule_source_created_notify(
         background_tasks, current_user, workspace_id, source, get_client_ip(request)
@@ -127,6 +129,7 @@ async def add_github_source(
     job = IngestionJob(source_id=source.id)
     db.add(job)
     await db.commit()
+    await sync_system_context_groups(body.workspace_id, db)
 
     _schedule_source_created_notify(
         background_tasks, current_user, body.workspace_id, source, get_client_ip(request)
@@ -166,6 +169,7 @@ async def add_web_source(
     job = IngestionJob(source_id=source.id)
     db.add(job)
     await db.commit()
+    await sync_system_context_groups(body.workspace_id, db)
 
     _schedule_source_created_notify(
         background_tasks, current_user, body.workspace_id, source, get_client_ip(request)
@@ -201,6 +205,7 @@ async def add_notion_source(
     job = IngestionJob(source_id=source.id)
     db.add(job)
     await db.commit()
+    await sync_system_context_groups(body.workspace_id, db)
     _schedule_source_created_notify(
         background_tasks, current_user, body.workspace_id, source, get_client_ip(request)
     )
@@ -233,6 +238,7 @@ async def add_github_discussions_source(
     job = IngestionJob(source_id=source.id)
     db.add(job)
     await db.commit()
+    await sync_system_context_groups(body.workspace_id, db)
     _schedule_source_created_notify(
         background_tasks, current_user, body.workspace_id, source, get_client_ip(request)
     )
@@ -265,6 +271,7 @@ async def add_youtube_source(
     job = IngestionJob(source_id=source.id)
     db.add(job)
     await db.commit()
+    await sync_system_context_groups(body.workspace_id, db)
     _schedule_source_created_notify(
         background_tasks, current_user, body.workspace_id, source, get_client_ip(request)
     )
@@ -336,3 +343,5 @@ async def delete_source(
         pass
 
     await db.delete(source)
+    await db.flush()
+    await sync_system_context_groups(source.workspace_id, db)

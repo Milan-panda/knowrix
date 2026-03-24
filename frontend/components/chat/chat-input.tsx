@@ -2,15 +2,32 @@
 
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, Paperclip } from "lucide-react";
+import { ArrowUp, Filter, Paperclip, X } from "lucide-react";
+
+interface SelectedContextChip {
+  id: string;
+  label: string;
+}
 
 interface ChatInputProps {
-  onSend: (text: string) => void;
+  onSend: (text: string, reasoning: boolean) => void;
+  onOpenContextFilter: () => void;
+  contextSummary: string;
+  selectedContextChips: SelectedContextChip[];
+  onRemoveContext: (id: string) => void;
   disabled?: boolean;
 }
 
-export function ChatInput({ onSend, disabled }: ChatInputProps) {
+export function ChatInput({
+  onSend,
+  onOpenContextFilter,
+  contextSummary,
+  selectedContextChips,
+  onRemoveContext,
+  disabled,
+}: ChatInputProps) {
   const [value, setValue] = useState("");
+  const [reasoning, setReasoning] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -24,7 +41,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   function handleSend() {
     const trimmed = value.trim();
     if (!trimmed || disabled) return;
-    onSend(trimmed);
+    onSend(trimmed, reasoning);
     setValue("");
   }
 
@@ -37,6 +54,23 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
 
   return (
     <div>
+      {selectedContextChips.length > 0 && (
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          {selectedContextChips.map((chip) => (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => onRemoveContext(chip.id)}
+              className="inline-flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] text-primary transition hover:bg-primary/15"
+              disabled={disabled}
+              title={`Remove ${chip.label}`}
+            >
+              <span className="max-w-[180px] truncate">{chip.label}</span>
+              <X className="h-3 w-3 opacity-70" />
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex items-end gap-2 rounded-xl border bg-muted/30 p-2 transition-colors focus-within:border-primary/40">
         <textarea
           ref={textareaRef}
@@ -59,6 +93,45 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
             onClick={handleSend}
           >
             <ArrowUp className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      <div className="mt-2 flex items-center gap-2 text-xs">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-7 px-2.5 text-xs"
+          disabled={disabled}
+          onClick={onOpenContextFilter}
+        >
+          <Filter className="mr-1.5 h-3.5 w-3.5" />
+          Filter Context
+        </Button>
+        <span className="text-muted-foreground">{contextSummary}</span>
+      </div>
+      <div className="mt-1 flex items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Mode</span>
+        <div className="inline-flex rounded-md border bg-muted/30 p-0.5">
+          <Button
+            type="button"
+            size="sm"
+            variant={reasoning ? "ghost" : "secondary"}
+            className="h-7 px-2.5 text-xs"
+            disabled={disabled}
+            onClick={() => setReasoning(false)}
+          >
+            Fast
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={reasoning ? "secondary" : "ghost"}
+            className="h-7 px-2.5 text-xs"
+            disabled={disabled}
+            onClick={() => setReasoning(true)}
+          >
+            Reasoning
           </Button>
         </div>
       </div>

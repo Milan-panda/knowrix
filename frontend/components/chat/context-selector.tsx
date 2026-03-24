@@ -13,6 +13,8 @@ interface ContextSelectorProps {
   sources: Source[];
   selectedIds: Set<string>;
   onToggle: (id: string) => void;
+  onSelectAll: () => void;
+  onClearAll: () => void;
 }
 
 function sourceIcon(type: string) {
@@ -24,7 +26,13 @@ function sourceIcon(type: string) {
   return "🌐";
 }
 
-export function ContextSelector({ sources, selectedIds, onToggle }: ContextSelectorProps) {
+export function ContextSelector({
+  sources,
+  selectedIds,
+  onToggle,
+  onSelectAll,
+  onClearAll,
+}: ContextSelectorProps) {
   const readySources = sources.filter((s) => s.status === "ready");
 
   if (readySources.length === 0) return null;
@@ -34,6 +42,21 @@ export function ContextSelector({ sources, selectedIds, onToggle }: ContextSelec
       <span className="text-[11px] font-mono text-muted-foreground shrink-0">
         context:
       </span>
+      <span className="text-[11px] text-muted-foreground shrink-0">
+        {selectedIds.size}/{readySources.length} selected
+      </span>
+      <button
+        onClick={onSelectAll}
+        className="rounded px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground hover:text-foreground border"
+      >
+        all
+      </button>
+      <button
+        onClick={onClearAll}
+        className="rounded px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground hover:text-foreground border"
+      >
+        none
+      </button>
       {readySources.map((source) => {
         const isSelected = selectedIds.has(source.id);
         return (

@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
     LLM_MODEL: str = "stepfun/step-3.5-flash:free"
+    NVIDIA_API_KEY: str = ""
+    NVIDIA_BASE_URL: str = "https://integrate.api.nvidia.com/v1"
+    NVIDIA_MODEL: str = "moonshotai/kimi-k2-instruct"
 
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     EMBEDDING_DIM: int = 384
@@ -57,9 +60,11 @@ class Settings(BaseSettings):
 
     @property
     def postgres_dsn(self) -> str:
+        # Empty POSTGRES_DB in .env overrides the default and makes libpq use DB name = username.
+        db = (self.POSTGRES_DB or "").strip() or "contextiq"
         return (
             f"postgresql+asyncpg://{quote_plus(self.POSTGRES_USER)}:{quote_plus(self.POSTGRES_PASSWORD)}"
-            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{db}"
         )
 
     @property

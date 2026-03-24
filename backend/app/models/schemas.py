@@ -156,6 +156,7 @@ class ChatRequest(BaseModel):
     thread_id: Optional[UUID] = None
     message: str
     source_ids: Optional[list[UUID]] = None
+    reasoning: bool = False
     history: list[dict] = []
 
 
@@ -174,6 +175,7 @@ class ChatThreadResponse(BaseModel):
     id: UUID
     workspace_id: UUID
     title: str
+    selected_source_ids: Optional[list[UUID]] = None
     created_at: datetime
     updated_at: datetime
 
@@ -187,5 +189,33 @@ class ChatMessageResponse(BaseModel):
     content: str
     sources_json: Optional[str] = None
     created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ─── Context Groups ────────────────────────────────────────────────────────────
+
+class ContextGroupCreate(BaseModel):
+    workspace_id: UUID
+    name: str = Field(..., min_length=1, max_length=128)
+
+
+class ContextGroupUpdate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=128)
+
+
+class ContextGroupSourcesUpdate(BaseModel):
+    source_ids: list[UUID]
+
+
+class ContextGroupResponse(BaseModel):
+    id: UUID
+    workspace_id: UUID
+    name: str
+    is_system: bool
+    source_ids: list[UUID] = []
+    sources_count: int = 0
+    created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}

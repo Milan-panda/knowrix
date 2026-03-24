@@ -52,6 +52,7 @@ class Workspace(Base):
     members = relationship("WorkspaceMember", back_populates="workspace", cascade="all, delete-orphan")
     invites = relationship("WorkspaceInvite", back_populates="workspace", cascade="all, delete-orphan")
     sources = relationship("Source", back_populates="workspace", cascade="all, delete-orphan")
+    context_groups = relationship("ContextGroup", back_populates="workspace", cascade="all, delete-orphan")
     connectors = relationship("WorkspaceConnector", back_populates="workspace", cascade="all, delete-orphan")
 
 
@@ -113,6 +114,39 @@ class Source(Base):
 
     workspace = relationship("Workspace", back_populates="sources")
     ingestion_jobs = relationship("IngestionJob", back_populates="source", cascade="all, delete-orphan")
+    context_group_links = relationship("ContextGroupSource", back_populates="source", cascade="all, delete-orphan")
+
+
+class ContextGroup(Base):
+    __tablename__ = "context_groups"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "name", name="uq_context_group_workspace_name"),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    workspace_id = Column(UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(128), nullable=False)
+    is_system = Column(Integer, default=0, nullable=False)  # 0/1 for backward compatibility
+    created_at = Column(DateTime(timezone=True), default=utcnow)
+    updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    workspace = relationship("Workspace", back_populates="context_groups")
+    source_links = relationship("ContextGroupSource", back_populates="group", cascade="all, delete-orphan")
+
+
+class ContextGroupSource(Base):
+    __tablename__ = "context_group_sources"
+    __table_args__ = (
+        UniqueConstraint("group_id", "source_id", name="uq_context_group_source_membership"),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    group_id = Column(UUID(as_uuid=True), ForeignKey("context_groups.id", ondelete="CASCADE"), nullable=False)
+    source_id = Column(UUID(as_uuid=True), ForeignKey("sources.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utcnow)
+
+    group = relationship("ContextGroup", back_populates="source_links")
+    source = relationship("Source", back_populates="context_group_links")
 
 
 class IngestionJob(Base):
@@ -136,6 +170,7 @@ class ChatThread(Base):
     workspace_id = Column(UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     title = Column(String(512), default="New chat")
+    selected_source_ids = Column(JSONB, nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
